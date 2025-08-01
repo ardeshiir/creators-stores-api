@@ -26,19 +26,20 @@ export async function createOtp(phone: string) {
 
 
 function generateOtp(): string {
-    const otp = crypto.randomInt(100000, 999999); // cryptographically secure random
+    const otp = crypto.randomInt(10000, 99999); // 5-digit OTP
     return otp.toString();
 }
 
 export const sendOtp = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { phone } = req.body;
-        if (!phone) return res.status(400).json({ message: 'Phone is required' });
+        const { phone, userId } = req.body;
+        if (!phone ) return res.status(400).json({ error_key:'PHONE_REQUIRED', message: 'Phone is required' });
+        if (!userId ) return res.status(400).json({ error_key:'USERID_REQUIRED', message: 'Phone is required' });
 
         // ✅ Check if user is registered
         const existingUser = await User.findOne({ phone });
         if (!existingUser) {
-            return res.status(404).json({ message: 'User not registered. Please sign up first.' });
+            return res.status(404).json({error_key:'USER_NOT_FOUND', message: 'User not registered. Please sign up first.' });
         }
 
         // ✅ Generate OTP
@@ -69,14 +70,14 @@ export const sendOtp = async (req: Request, res: Response, next: NextFunction) =
 export const verifyOtp = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { phone, code } = req.body;
-        if (!phone || !code) return res.status(400).json({ message: 'Phone and OTP are required' });
+        if (!phone || !code) return res.status(400).json({error_key:'OTP_REQUIRED', message: 'Phone and OTP are required' });
 
         const record = await Otp.findOne({ phone });
-        if (!record) return res.status(400).json({ message: 'Invalid or expired OTP' });
+        if (!record) return res.status(400).json({ error_key:'INVALID_OTP' ,message: 'Invalid or expired OTP' });
 
         if (record.expiresAt < new Date()) {
             await Otp.deleteMany({ phone });
-            return res.status(400).json({ message: 'OTP expired' });
+            return res.status(400).json({error_key:'EXPIRED_OTP', message: 'OTP expired' });
         }
 
         const isMatch = await bcrypt.compare(code, record.code);

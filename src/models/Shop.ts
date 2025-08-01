@@ -3,25 +3,19 @@ import mongoose, { Document, Schema } from 'mongoose';
 interface IAttachment {
     type?: string; // e.g. banner type for signBoard
     dimensions?: { width: number; height: number };
-    attachments: string[]; // image URLs
-}
-
-interface IEnvironment {
-    stock: boolean;
-    mainStreet: boolean;
-    signBoard: IAttachment[];
+    attachments: string; // image URL
 }
 
 interface IDisplayStand {
     type: string;
     brand: string;
-    attachments: string[];
+    attachments: string;
 }
 
 interface IShowCase {
     dimensions: { width: number; height: number };
     sticker: boolean;
-    attachments: string[];
+    attachments: string;
 }
 
 interface IAddress {
@@ -52,11 +46,13 @@ export interface IShop extends Document {
     purchaseMethod: 'indirect' | 'direct';
     otherBrands: string[];
     address: IAddress;
-    environment?: IEnvironment;
+    stock: boolean
+    mainStreet: boolean
+    signBoard: IAttachment[]
     displayStand?: IDisplayStand;
     showCase?: IShowCase[];
-    externalImages?: string[][];
-    internalImages?: string[][];
+    externalImages?: string[];
+    internalImages?: string[];
     description?: string;
     createdAt: Date;
 }
@@ -67,11 +63,6 @@ const AttachmentSchema = new Schema<IAttachment>({
     attachments: [{ type: String }],
 });
 
-const EnviornmentSchema = new Schema<IEnvironment>({
-    stock: { type: Boolean, required: true },
-    mainStreet: { type: Boolean, required: true },
-    signBoard: [AttachmentSchema],
-});
 
 const DisplayStandSchema = new Schema<IDisplayStand>({
     type: { type: String, required: true },
@@ -82,7 +73,7 @@ const DisplayStandSchema = new Schema<IDisplayStand>({
 const ShowCaseSchema = new Schema<IShowCase>({
     dimensions: { width: Number, height: Number },
     sticker: { type: Boolean, required: true },
-    attachments: [{ type: String }],
+    attachments: { type: String },
 });
 
 const AddressSchema = new Schema<IAddress>({
@@ -105,7 +96,7 @@ const StoreDescriptionSchema = new Schema<IStoreDescription>({
 const ShopSchema = new Schema<IShop>({
     storeName: { type: String, required: true },
     storeCode: { type: String, required: true },
-    propertyStatus: { type: String, enum: ['rental', 'owned'], required: true },
+    propertyStatus: { type: String, enum: ['rental', 'owner'], required: true },
     name: { type: String, required: true },
     familyName: { type: String, required: true },
     mobile: [{ type: String }],
@@ -113,11 +104,13 @@ const ShopSchema = new Schema<IShop>({
     purchaseMethod: { type: String, enum: ['indirect', 'direct'], required: true },
     otherBrands: [{ type: String }],
     address: AddressSchema,
-    environment: EnviornmentSchema,
+    stock: { type: Boolean, required: true },
+    mainStreet: { type: Boolean, required: true },
+    signBoard: [AttachmentSchema],
     displayStand: DisplayStandSchema,
     showCase: [ShowCaseSchema],
-    externalImages: [[{ type: String }]],
-    internalImages: [[{ type: String }]],
+    externalImages: [{ type: String }],
+    internalImages: [{ type: String }],
     description: { type: String },
     createdAt: { type: Date, default: Date.now },
 });
