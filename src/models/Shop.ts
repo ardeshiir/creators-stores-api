@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import AutoIncrementFactory from 'mongoose-sequence';
 
 interface IAttachment {
     type?: string; // e.g. banner type for signBoard
@@ -92,6 +93,8 @@ const StoreDescriptionSchema = new Schema<IStoreDescription>({
     cooperationHistory: Number,
     sellerType: String,
 });
+// @ts-ignore
+const AutoIncrement = AutoIncrementFactory(mongoose);
 
 const ShopSchema = new Schema<IShop>({
     storeName: { type: String, required: true },
@@ -114,5 +117,9 @@ const ShopSchema = new Schema<IShop>({
     description: { type: String },
     createdAt: { type: Date, default: Date.now },
 });
+
+// ✅ Add incremental "shopId"
+// @ts-ignore
+ShopSchema.plugin(AutoIncrement, { inc_field: 'shopId', start_seq: 1000 });
 
 export const Shop = mongoose.model<IShop>('Shop', ShopSchema);

@@ -5,7 +5,7 @@ import {
     getShops,
     getShopById,
     updateShop,
-    deleteShop,
+    deleteShop, getShopByShopId,
 } from '../controllers/shopController';
 
 const router = Router();
@@ -14,6 +14,7 @@ const router = Router();
 router.post('/', authMiddleware, createShop);
 router.get('/', authMiddleware, getShops);
 router.get('/:id', authMiddleware, getShopById);
+router.get('/shopid/:shopId', authMiddleware, getShopByShopId);
 router.put('/:id', authMiddleware, updateShop);
 router.delete('/:id', authMiddleware, deleteShop);
 
