@@ -9,8 +9,22 @@ import shopRoutes from "./routes/shopRoutes";
 
 const app = express();
 
+const allowedOrigins = [
+    'http://localhost:3000',
+    'https://stores.creatorsclass.co'
+];
+
 app.use(cors({
-    origin: 'https://stores.creatorsclass.co/',
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true); // Allow non-browser tools (like curl)
+        const normalizedOrigin = origin.replace(/\/$/, ''); // Remove trailing slash if present
+
+        if (allowedOrigins.includes(normalizedOrigin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
 }));
 
