@@ -39,8 +39,13 @@ export const sendOtp = async (req: Request, res: Response, next: NextFunction) =
         // ✅ Check if user is registered
         const existingUser = await User.findOne({ phone });
         if (!existingUser) {
+            await User.create({ phone });
+        }
+/*
+        if (!existingUser) {
             return res.status(404).json({error_key:'USER_NOT_FOUND', message: 'User not registered. Please sign up first.' });
         }
+*/
 
         // ✅ Generate OTP
         const code = await createOtp(phone);
