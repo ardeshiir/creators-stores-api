@@ -47,12 +47,12 @@ export const sendOtp = async (req: Request, res: Response, next: NextFunction) =
 
 
         // ✅ Send SMS via Kavenegar
-        console.log(`Sending OTP ${code} to ${phone}`);
         const api = Kavenegar.KavenegarApi({ apikey: config.kavenegarApiKey });
         api.Send(
             {
-                message: `کد ورود شما: 
-                Code:${code}`,
+                message: `کد ورود شما:
+                Code: ${code}
+                @stores.creatorsclass.co`,
                 sender: "2000660110",
                 receptor: phone,
             },
