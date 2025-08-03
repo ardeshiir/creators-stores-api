@@ -93,7 +93,7 @@ export const verifyOtp = async (req: Request, res: Response, next: NextFunction)
         await Otp.deleteMany({ phone });
 
         // Sign JWT
-        const token = jwt.sign({ userId: user._id, phone: user.phone }, config.jwtSecret, {
+        const token = jwt.sign(    { userId: user._id, phone: user.phone, role: user.role }, config.jwtSecret, {
             expiresIn: '7d',
         });
 
