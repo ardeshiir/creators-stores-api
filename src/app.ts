@@ -9,8 +9,11 @@ import shopRoutes from "./routes/shopRoutes";
 
 const app = express();
 
-app.use(cors());
-app.options('*', cors());
+app.use(cors({
+    origin: 'https://stores.creatorsclass.co/',
+    credentials: true,
+}));
+
 app.use(express.json());
 
 // Routes
