@@ -1,32 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import { Shop } from '../models/Shop';
-import {User} from "../models/User";
-import {createOtp, generateAndSendOtp} from "./authController";
-import {Otp} from "../models/Otp";
+import { User } from "../models/User";
+import { generateAndSendOtp } from "./authController";
+import { Otp } from "../models/Otp";
 import bcrypt from "bcrypt";
-import {AuthRequest} from "../middlewares/authMiddleware";
-import {State} from "../models/State";
-import {getRoleBasedFilter} from "../middlewares/getRoleBasedFilter";
+import { AuthRequest } from "../middlewares/authMiddleware";
+import { State } from "../models/State";
+import { getRoleBasedFilter } from "../middlewares/getRoleBasedFilter";
 
-// Create Shop
+// -------------------- CREATE --------------------
 export const createShop = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { specialistName, specialistPhoneNumber, ...shopData } = req.body;
 
-        // 1. Ensure auth middleware added user
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        // 2. Compare JWT claims with body specialist fields
-        /*if (req.user.phone !== specialistPhoneNumber || req.user.name !== specialistName) {
-            return res.status(403).json({
-                error_key: "INVALID_SPECIALIST",
-                message: "Specialist credentials do not match the authenticated user",
-            });
-        }*/
-
-        // 3. Fetch the actual specialist from DB by userId in token
         const specialist = await User.findById(req.user.userId);
         if (!specialist) {
             return res.status(404).json({
@@ -35,14 +25,14 @@ export const createShop = async (req: AuthRequest, res: Response, next: NextFunc
             });
         }
 
-        // 4. Create shop with specialist reference
         const shop = await Shop.create({
             ...shopData,
             specialist: specialist._id,
             verified: false,
         });
-        await syncStateCity(shopData.address.state,shopData.address.city)
-        // 5. Generate OTP for this specialist’s phone and send it
+
+        await syncStateCity(shopData.address.state, shopData.address.city);
+
         await generateAndSendOtp(specialist.phone);
 
         res.status(201).json({
@@ -54,6 +44,7 @@ export const createShop = async (req: AuthRequest, res: Response, next: NextFunc
     }
 };
 
+// -------------------- VERIFY --------------------
 export const verifyShop = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { shopID, code } = req.body;
@@ -65,7 +56,6 @@ export const verifyShop = async (req: Request, res: Response, next: NextFunction
 
         const specialistPhone = (shop.specialist as any).phone;
 
-        // Check OTP for specialist phone
         const record = await Otp.findOne({ phone: specialistPhone });
         if (!record) return res.status(400).json({ error_key: "INVALID_OTP", message: "Invalid OTP" });
 
@@ -79,11 +69,9 @@ export const verifyShop = async (req: Request, res: Response, next: NextFunction
             return res.status(400).json({ error_key: "INVALID_OTP", message: "Invalid OTP" });
         }
 
-        // Mark shop as verified
         shop.verified = true;
         await shop.save();
 
-        // Delete OTP after verification
         await Otp.deleteMany({ phone: specialistPhone });
 
         res.json({ message: "Shop verified successfully", shop });
@@ -92,7 +80,7 @@ export const verifyShop = async (req: Request, res: Response, next: NextFunction
     }
 };
 
-
+// -------------------- RESEND OTP --------------------
 export const resendShopOtp = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
@@ -107,10 +95,7 @@ export const resendShopOtp = async (req: AuthRequest, res: Response, next: NextF
 
         const specialistPhone = (shop.specialist as any).phone;
 
-        // Delete old OTPs
         await Otp.deleteMany({ phone: specialistPhone });
-
-        // Generate new OTP
         await generateAndSendOtp(specialistPhone);
 
         res.json({ message: "OTP resent successfully" });
@@ -119,44 +104,28 @@ export const resendShopOtp = async (req: AuthRequest, res: Response, next: NextF
     }
 };
 
-// Get all Shops
+// -------------------- GET ALL --------------------
 export const getShops = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const filter = await getRoleBasedFilter(req.user);
-        const shops = await Shop.find(filter);
+        const roleFilter = await getRoleBasedFilter(req.user);
+        const shops = await Shop.find(roleFilter);
         res.json(shops);
     } catch (error) {
         next(error);
     }
 };
 
-export const getShopByShopId = async (req: Request, res: Response, next: NextFunction) => {
+// -------------------- GET BY SHOPID --------------------
+export const getShopByShopId = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const { shopId } = req.params;
-
-        // Ensure shopId is a number
-        const numericShopId = parseInt(shopId, 10);
+        const numericShopId = parseInt(req.params.shopId, 10);
         if (isNaN(numericShopId)) {
             return res.status(400).json({ message: 'Invalid shopId. Must be a number.' });
         }
 
-        const shop = await Shop.findOne({ shopId: numericShopId });
+        const roleFilter = await getRoleBasedFilter(req.user);
+        const shop = await Shop.findOne({ shopId: numericShopId, ...roleFilter });
 
-        if (!shop) {
-            return res.status(404).json({ message: 'Shop not found' });
-        }
-
-        return res.status(200).json(shop);
-    } catch (error) {
-        next(error);
-    }
-};
-
-
-// Get single Shop by ID
-export const getShopById = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const shop = await Shop.findById(req.params.id);
         if (!shop) return res.status(404).json({ message: 'Shop not found' });
         res.json(shop);
     } catch (error) {
@@ -164,10 +133,12 @@ export const getShopById = async (req: Request, res: Response, next: NextFunctio
     }
 };
 
-// Update Shop by ID
-export const updateShop = async (req: Request, res: Response, next: NextFunction) => {
+// -------------------- GET BY ID --------------------
+export const getShopById = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const shop = await Shop.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const roleFilter = await getRoleBasedFilter(req.user);
+        const shop = await Shop.findOne({ _id: req.params.id, ...roleFilter });
+
         if (!shop) return res.status(404).json({ message: 'Shop not found' });
         res.json(shop);
     } catch (error) {
@@ -175,18 +146,34 @@ export const updateShop = async (req: Request, res: Response, next: NextFunction
     }
 };
 
-// Delete Shop
-export const deleteShop = async (req: Request, res: Response, next: NextFunction) => {
+// -------------------- UPDATE --------------------
+export const updateShop = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const shop = await Shop.findByIdAndDelete(req.params.id);
-        if (!shop) return res.status(404).json({ message: 'Shop not found' });
+        const roleFilter = await getRoleBasedFilter(req.user);
+        const shop = await Shop.findOneAndUpdate({ _id: req.params.id, ...roleFilter }, req.body, { new: true });
+
+        if (!shop) return res.status(404).json({ message: 'Shop not found or not authorized' });
+        res.json(shop);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// -------------------- DELETE --------------------
+export const deleteShop = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const roleFilter = await getRoleBasedFilter(req.user);
+        const shop = await Shop.findOneAndDelete({ _id: req.params.id, ...roleFilter });
+
+        if (!shop) return res.status(404).json({ message: 'Shop not found or not authorized' });
         res.json({ message: 'Shop deleted successfully' });
     } catch (error) {
         next(error);
     }
 };
 
-export const filterShops = async (req: Request, res: Response, next: NextFunction) => {
+// -------------------- FILTER --------------------
+export const filterShops = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const {
             state,
@@ -201,7 +188,6 @@ export const filterShops = async (req: Request, res: Response, next: NextFunctio
 
         const filter: any = {};
 
-
         if (state) {
             const states = Array.isArray(state) ? state : String(state).split(",");
             filter["address.state"] = { $in: states };
@@ -212,50 +198,29 @@ export const filterShops = async (req: Request, res: Response, next: NextFunctio
             filter["address.city"] = { $in: cities };
         }
 
-        if (purchaseMethod) {
-            filter.purchaseMethod = purchaseMethod;
-        }
+        if (purchaseMethod) filter.purchaseMethod = purchaseMethod;
+        if (propertyStatus) filter.propertyStatus = propertyStatus;
+        if (sellerType) filter["storeDescription.sellerType"] = sellerType;
 
-        if(propertyStatus){
-            filter.propertyStatus = propertyStatus;
-        }
+        if (hasSignBoard === "true") filter.signBoard = { $exists: true, $ne: [] };
+        if (hasSignBoard === "false") filter.signBoard = { $in: [null, []] };
 
-        if (sellerType) {
-            filter["storeDescription.sellerType"] = sellerType;
-        }
+        if (hasDisplayStand === "true") filter.displayStand = { $exists: true };
+        if (hasDisplayStand === "false") filter.displayStand = { $exists: false };
 
-        // signBoard exists?
-        if (hasSignBoard === "true") {
-            filter.signBoard = { $exists: true, $ne: [] };
-        }
-        if (hasSignBoard === "false") {
-            filter.signBoard = { $in: [null, []] };
-        }
+        if (hasShowCase === "true") filter.showCase = { $exists: true, $ne: [] };
+        if (hasShowCase === "false") filter.showCase = { $in: [null, []] };
 
-        // displayStand exists?
-        if (hasDisplayStand === "true") {
-            filter.displayStand = { $exists: true };
-        }
-        if (hasDisplayStand === "false") {
-            filter.displayStand = { $exists: false };
-        }
+        const roleFilter = await getRoleBasedFilter(req.user);
+        const shops = await Shop.find({ ...filter, ...roleFilter });
 
-        // showCase exists?
-        if (hasShowCase === "true") {
-            filter.showCase = { $exists: true, $ne: [] };
-        }
-        if (hasShowCase === "false") {
-            filter.showCase = { $in: [null, []] };
-        }
-
-        const shops = await Shop.find(filter);
-        return res.json(shops);
+        res.json(shops);
     } catch (error) {
         next(error);
     }
 };
 
-
+// -------------------- SYNC STATE/CITY --------------------
 async function syncStateCity(stateName: string, cityName: string) {
     const stateDoc = await State.findOne({ name: stateName });
     if (!stateDoc) {
