@@ -6,13 +6,18 @@ import {
     getShopById,
     updateShop,
     deleteShop, getShopByShopId,
+    verifyShop, resendShopOtp, filterShops,
 } from '../controllers/shopController';
 
 const router = Router();
 
 // Protected routes using authMiddleware
 router.post('/', authMiddleware, createShop);
+router.post("/:id/resend-otp", authMiddleware, resendShopOtp);
+
+router.post("/verify", authMiddleware, verifyShop);
 router.get('/', authMiddleware, getShops);
+router.get('/filter', authMiddleware, filterShops);
 router.get('/:id', authMiddleware, getShopById);
 router.get('/shopid/:shopId', authMiddleware, getShopByShopId);
 router.put('/:id', authMiddleware, updateShop);

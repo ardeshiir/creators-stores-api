@@ -34,9 +34,7 @@ export const sendOtp = async (req: Request, res: Response, next: NextFunction) =
     try {
         const { phone, userId } = req.body;
         if (!phone ) return res.status(400).json({ error_key:'PHONE_REQUIRED', message: 'Phone is required' });
-        if (!userId ) return res.status(400).json({ error_key:'USERID_REQUIRED', message: 'Phone is required' });
 
-        // ✅ Check if user is registered
         const existingUser = await User.findOne({ phone });
         if (!existingUser) {
             await User.create({ phone });
@@ -46,25 +44,7 @@ export const sendOtp = async (req: Request, res: Response, next: NextFunction) =
             return res.status(404).json({error_key:'USER_NOT_FOUND', message: 'User not registered. Please sign up first.' });
         }
 */
-
-        // ✅ Generate OTP
-        const code = await createOtp(phone);
-
-
-        // ✅ Send SMS via Kavenegar
-        const api = Kavenegar.KavenegarApi({ apikey: config.kavenegarApiKey });
-        api.Send(
-            {
-                message: `کد ورود شما:
-                Code: ${code}
-                @stores.creatorsclass.co`,
-                sender: "2000660110",
-                receptor: phone,
-            },
-            () => {
-                console.log(`OTP Sent ${code} to ${phone}`);
-            }
-        );
+        generateAndSendOtp(phone);
 
         return res.status(200).json({ message: 'OTP sent' });
     } catch (error) {
@@ -102,8 +82,31 @@ export const verifyOtp = async (req: Request, res: Response, next: NextFunction)
             expiresIn: '7d',
         });
 
-        res.json({ token });
+        res.json({ token, user });
     } catch (error) {
         next(error);
     }
 };
+
+
+export const generateAndSendOtp = async (phoneNumber: string) => {
+    // ✅ Generate OTP
+    const code = await createOtp(phoneNumber);
+
+
+    // ✅ Send SMS via Kavenegar
+    const api = Kavenegar.KavenegarApi({ apikey: config.kavenegarApiKey });
+    api.Send(
+        {
+            message: `کد ورود شما:
+                Code: ${code}
+                @stores.creatorsclass.co`,
+            sender: "2000660110",
+            receptor: phoneNumber,
+        },
+        () => {
+            console.log(`OTP Sent ${code} to ${phoneNumber}`);
+        }
+    );
+
+}

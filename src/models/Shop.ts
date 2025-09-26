@@ -1,5 +1,6 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, Types } from 'mongoose';
 import AutoIncrementFactory from 'mongoose-sequence';
+import {IUser} from "./User";
 
 interface IAttachment {
     type?: string; // e.g. banner type for signBoard
@@ -39,23 +40,27 @@ interface IStoreDescription {
 export interface IShop extends Document {
     storeName: string;
     storeCode: string;
-    propertyStatus: 'rental' | 'owned';
+    propertyStatus: "rental" | "owner"; // ⚠️ I fixed "owned" → "owner" to match schema
     name: string;
     familyName: string;
     mobile: string[];
     storeDescription: IStoreDescription;
-    purchaseMethod: 'indirect' | 'direct';
+    purchaseMethod: "indirect" | "direct";
     otherBrands: string[];
     address: IAddress;
-    stock: boolean
-    mainStreet: boolean
-    signBoard: IAttachment[]
+    stock: boolean;
+    mainStreet: boolean;
+    signBoard: IAttachment[];
     displayStand?: IDisplayStand;
     showCase?: IShowCase[];
     externalImages?: string[];
     internalImages?: string[];
     description?: string;
     createdAt: Date;
+
+    // new fields
+    specialist: Types.ObjectId | IUser; // reference to User
+    verified: boolean;
 }
 
 const AttachmentSchema = new Schema<IAttachment>({
@@ -66,8 +71,8 @@ const AttachmentSchema = new Schema<IAttachment>({
 
 
 const DisplayStandSchema = new Schema<IDisplayStand>({
-    type: { type: String, required: true },
-    brand: { type: String, required: true },
+    type: { type: String  },
+    brand: { type: String  },
     attachments: [{ type: String }],
 });
 
@@ -116,6 +121,10 @@ const ShopSchema = new Schema<IShop>({
     internalImages: [{ type: String }],
     description: { type: String },
     createdAt: { type: Date, default: Date.now },
+    // specialist reference
+    specialist: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    // verification status
+    verified: { type: Boolean, default: false },
 });
 
 // ✅ Add incremental "shopId"
