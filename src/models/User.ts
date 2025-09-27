@@ -24,6 +24,7 @@ const UserSchema = new Schema<IUser>({
         type: String,
         enum: ["field_agent", "regional_manager", "global_manager"],
         required: true,
+        default: "field_agent",
     },
     permissions: { type: [String], default: [] },
     createdAt: { type: Date, default: Date.now },
