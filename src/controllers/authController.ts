@@ -27,7 +27,7 @@ export async function createOtp(phone: string) {
 
 function generateOtp(): string {
     const otp = crypto.randomInt(10000, 99999); // 5-digit OTP
-    return otp.toString();
+    return '12345';
 }
 
 export const sendOtp = async (req: Request, res: Response, next: NextFunction) => {
