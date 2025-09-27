@@ -19,6 +19,8 @@ router.get(
     getUsers
 );
 
+router.get("/search",  searchUsers);
+
 router.get(
     "/:id",
     getUserById
@@ -34,6 +36,6 @@ router.delete(
     deleteUser
 );
 
-router.get("/search",  searchUsers);
+
 
 export default router;
