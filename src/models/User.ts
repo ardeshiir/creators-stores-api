@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface IUser extends Document {
     name?: string;
-    family?: string;
+    lastName?: string;
     phone: string;
     role: "field_agent" | "regional_manager" | "global_manager";
     permissions: string[];
@@ -18,7 +18,7 @@ export interface IUser extends Document {
 
 const UserSchema = new Schema<IUser>({
     name: { type: String },
-    family: { type: String },
+    lastName: { type: String },
     phone: { type: String, required: true, unique: true },
     role: {
         type: String,

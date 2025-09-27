@@ -56,3 +56,26 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
         next(error);
     }
 };
+
+// Search users by name or lastName
+export const searchUsers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { q } = req.query;
+
+        if (!q || typeof q !== "string") {
+            return res.status(400).json({ message: "Search query (q) is required" });
+        }
+
+        // Case-insensitive search across both name and lastName
+        const users = await User.find({
+            $or: [
+                { name: { $regex: q, $options: "i" } },
+                { lastName: { $regex: q, $options: "i" } }
+            ]
+        });
+
+        res.json(users);
+    } catch (error) {
+        next(error);
+    }
+};

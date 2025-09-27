@@ -42,7 +42,7 @@ export interface IShop extends Document {
     storeCode: string;
     propertyStatus: "rental" | "owner"; // ⚠️ I fixed "owned" → "owner" to match schema
     name: string;
-    familyName: string;
+    lastName: string;
     mobile: string[];
     storeDescription: IStoreDescription;
     purchaseMethod: "indirect" | "direct";
@@ -106,7 +106,7 @@ const ShopSchema = new Schema<IShop>({
     storeCode: { type: String, required: true },
     propertyStatus: { type: String, enum: ['rental', 'owner'], required: true },
     name: { type: String, required: true },
-    familyName: { type: String, required: true },
+    lastName: { type: String, required: true },
     mobile: [{ type: String }],
     storeDescription: StoreDescriptionSchema,
     purchaseMethod: { type: String, enum: ['indirect', 'direct'], required: true },

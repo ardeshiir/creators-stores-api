@@ -4,7 +4,7 @@ import {
     getUsers,
     getUserById,
     updateUser,
-    deleteUser,
+    deleteUser, searchUsers,
 } from '../controllers/userController';
 
 const router = Router();
@@ -33,5 +33,7 @@ router.delete(
     "/:id",
     deleteUser
 );
+
+router.get("/search",  searchUsers);
 
 export default router;
