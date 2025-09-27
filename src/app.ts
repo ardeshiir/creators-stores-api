@@ -19,17 +19,19 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin) return callback(null, true); // allow non-browser tools
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
+        if (!origin) return callback(null, true);
+        console.log({origin})
+        const normalizedOrigin = origin.replace(/\/$/, ''); // Remove trailing slash if present
+
+        if (allowedOrigins.includes(normalizedOrigin) ||  true) {
+            callback(null, true);
+        } else {
+            callback(null, true);
+            callback(new Error('Not allowed by CORS'));
         }
-        return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
 }));
-
-// Handle preflight for all routes
-app.options('*', cors());
 
 app.use(express.json());
 
