@@ -12,7 +12,7 @@ import { getRoleBasedFilter } from "../middlewares/getRoleBasedFilter";
 export const createShop = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const { specialistName, specialistPhoneNumber, ...shopData } = req.body;
-
+        console.log(JSON.stringify({userAttempting:req.user.userId, phone:specialistPhoneNumber, userAttemptinguser:req.user }))
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
