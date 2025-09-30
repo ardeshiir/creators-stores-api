@@ -25,6 +25,7 @@ interface IAddress {
     city: string;
     description: string;
     postalcode: string;
+    district: string;
     phoneNumber: string[];
     location: { lat: string; lon: string };
     landLine: string;
@@ -87,6 +88,7 @@ const AddressSchema = new Schema<IAddress>({
     city: String,
     description: String,
     postalcode: String,
+    district: String,
     phoneNumber: [String],
     location: { lat: String, lon: String },
     landLine: String,
