@@ -25,7 +25,7 @@ interface IAddress {
     city: string;
     description: string;
     postalcode: string;
-    district: string;
+    district?: string;
     phoneNumber: string[];
     location: { lat: string; lon: string };
     landLine: string;
