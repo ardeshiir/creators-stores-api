@@ -1,11 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
 import { User } from '../models/User';
+import {State} from "../models/State";
 
 // Create a user
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { city, district, identifierCode, lastName, name, phone, role, state }  = req.body
-        const newUser = await User.create({ city, district, identifierCode, lastName, name, phone, role, state });
+        const newUser = await User.create({
+            name,
+            lastName,
+            phone,
+            role,
+            state,
+            city,
+            district,
+            identifierCode,
+        });
+
+        // Sync to State collection
+        await syncUserLocation(state, city, district);
         res.status(201).json(newUser);
     } catch (error) {
         next(error);
@@ -79,3 +92,63 @@ export const searchUsers = async (req: Request, res: Response, next: NextFunctio
         next(error);
     }
 };
+
+export const filterUsers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { state, city, district, role } = req.query;
+
+        const filter: any = {};
+
+        if (state) {
+            const states = Array.isArray(state) ? state : String(state).split(',');
+            filter.state = { $in: states };
+        }
+
+        if (city) {
+            const cities = Array.isArray(city) ? city : String(city).split(',');
+            filter.city = { $in: cities };
+        }
+
+        if (district) {
+            const districts = Array.isArray(district) ? district : String(district).split(',');
+            filter.district = { $in: districts.map((d) => Number(d)) };
+        }
+
+        if (role) {
+            filter.role = role;
+        }
+
+        const users = await User.find(filter);
+        return res.json(users);
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+export async function syncUserLocation(stateName: string, cityName: string, district?: number) {
+    let stateDoc = await State.findOne({ name: stateName });
+
+    if (!stateDoc) {
+        // Create new state with city + optional district
+        stateDoc = await State.create({
+            name: stateName,
+            cities: [{ name: cityName, districts: district ? [district] : [] }],
+        });
+        return stateDoc;
+    }
+
+    // Find city inside state
+    let cityDoc = stateDoc.cities.find((c) => c.name === cityName);
+
+    if (!cityDoc) {
+        stateDoc.cities.push({ name: cityName, districts: district ? [district] : [] });
+    } else {
+        if (district && !cityDoc.districts.includes(district)) {
+            cityDoc.districts.push(district);
+        }
+    }
+
+    await stateDoc.save();
+    return stateDoc;
+}

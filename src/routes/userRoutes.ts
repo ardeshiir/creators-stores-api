@@ -4,37 +4,24 @@ import {
     getUsers,
     getUserById,
     updateUser,
-    deleteUser, searchUsers,
+    deleteUser, searchUsers, filterUsers,
 } from '../controllers/userController';
 
 const router = Router();
 
-router.post(
-    "/",
-    createUser
-);
+router.post("/", createUser);
 
-router.get(
-    "/",
-    getUsers
-);
+router.get("/", getUsers);
 
 router.get("/search",  searchUsers);
 
-router.get(
-    "/:id",
-    getUserById
-);
+router.get('/filter', filterUsers);
 
-router.put(
-    "/:id",
-    updateUser
-);
+router.get("/:id", getUserById);
 
-router.delete(
-    "/:id",
-    deleteUser
-);
+router.put("/:id", updateUser);
+
+router.delete("/:id", deleteUser);
 
 
 

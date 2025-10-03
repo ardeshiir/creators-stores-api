@@ -221,12 +221,30 @@ export const filterShops = async (req: AuthRequest, res: Response, next: NextFun
 };
 
 // -------------------- SYNC STATE/CITY --------------------
-async function syncStateCity(stateName: string, cityName: string) {
-    const stateDoc = await State.findOne({ name: stateName });
+export async function syncStateCity(
+    stateName: string,
+    cityName: string,
+    district?: number
+) {
+    let stateDoc = await State.findOne({ name: stateName });
+
     if (!stateDoc) {
-        await State.create({ name: stateName, cities: [cityName] });
-    } else if (!stateDoc.cities.includes(cityName)) {
-        stateDoc.cities.push(cityName);
-        await stateDoc.save();
+        stateDoc = await State.create({
+            name: stateName,
+            cities: [{ name: cityName, districts: district ? [district] : [] }],
+        });
+        return;
     }
+
+    const cityDoc = stateDoc.cities.find((c) => c.name === cityName);
+
+    if (!cityDoc) {
+        stateDoc.cities.push({ name: cityName, districts: district ? [district] : [] });
+    } else {
+        if (district && !cityDoc.districts.includes(district)) {
+            cityDoc.districts.push(district);
+        }
+    }
+
+    await stateDoc.save();
 }
