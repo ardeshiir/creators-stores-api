@@ -108,7 +108,7 @@ export const resendShopOtp = async (req: AuthRequest, res: Response, next: NextF
 export const getShops = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const roleFilter = await getRoleBasedFilter(req.user);
-        const shops = await Shop.find(roleFilter);
+        const shops = await Shop.find(roleFilter).sort({ createdAt: -1 });
         res.json(shops);
     } catch (error) {
         next(error);
