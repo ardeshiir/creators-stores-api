@@ -223,27 +223,31 @@ export const filterShops = async (req: AuthRequest, res: Response, next: NextFun
 // -------------------- SYNC STATE/CITY --------------------
 export async function syncStateCity(
     stateName: string,
-    cityName: string,
+    cityName?: string,
     district?: number
 ) {
-    let stateDoc = await State.findOne({ name: stateName });
+    const safeStateName = stateName?.trim() || 'نامشخص';
+    const safeCityName = cityName?.trim() || 'نا مشخص';
+
+    let stateDoc = await State.findOne({ name: safeStateName });
 
     if (!stateDoc) {
         stateDoc = await State.create({
-            name: stateName,
-            cities: [{ name: cityName || 'نا مشخص', districts: district ? [district] : [] }],
+            name: safeStateName,
+            cities: [{ name: safeCityName, districts: district ? [district] : [] }],
         });
         return;
     }
 
-    const cityDoc = stateDoc.cities.find((c) => c.name === cityName);
+    const cityDoc = stateDoc.cities.find((c) => c.name === safeCityName);
 
     if (!cityDoc) {
-        stateDoc.cities.push({ name: cityName || 'نا مشخص', districts: district ? [district] : [] });
-    } else {
-        if (district && !cityDoc.districts.includes(district)) {
-            cityDoc.districts.push(district);
-        }
+        stateDoc.cities.push({
+            name: safeCityName,
+            districts: district ? [district] : [],
+        });
+    } else if (district && !cityDoc.districts.includes(district)) {
+        cityDoc.districts.push(district);
     }
 
     await stateDoc.save();
