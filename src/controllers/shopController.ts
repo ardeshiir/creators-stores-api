@@ -231,7 +231,7 @@ export async function syncStateCity(
     if (!stateDoc) {
         stateDoc = await State.create({
             name: stateName,
-            cities: [{ name: cityName, districts: district ? [district] : [] }],
+            cities: [{ name: cityName || 'نا مشخص', districts: district ? [district] : [] }],
         });
         return;
     }
@@ -239,7 +239,7 @@ export async function syncStateCity(
     const cityDoc = stateDoc.cities.find((c) => c.name === cityName);
 
     if (!cityDoc) {
-        stateDoc.cities.push({ name: cityName, districts: district ? [district] : [] });
+        stateDoc.cities.push({ name: cityName || 'نا مشخص', districts: district ? [district] : [] });
     } else {
         if (district && !cityDoc.districts.includes(district)) {
             cityDoc.districts.push(district);
