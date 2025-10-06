@@ -247,8 +247,8 @@ export async function syncStateCity(
             name: safeCityName,
             districts: district ? [district] : [],
         });
-    } else if (district && !cityDoc.districts.includes(district)) {
-        cityDoc.districts.push(district);
+    } else if (district && !cityDoc?.districts?.includes(district)) {
+        cityDoc?.districts?.push(district);
     }
 
     await stateDoc.save();
