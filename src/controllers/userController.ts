@@ -126,27 +126,38 @@ export const filterUsers = async (req: Request, res: Response, next: NextFunctio
 };
 
 
-export async function syncUserLocation(stateName: string, cityName: string, district?: number) {
-    let stateDoc = await State.findOne({ name: stateName });
+export async function syncUserLocation(
+    stateName?: string,
+    cityName?: string,
+    district?: number
+) {
+    // ✅ Ensure safe string values
+    const safeStateName = typeof stateName === 'string' && stateName.trim() ? stateName.trim() : 'نامشخص';
+    const safeCityName = typeof cityName === 'string' && cityName.trim() ? cityName.trim() : 'نا مشخص';
+
+    console.log('[syncUserLocation]', { stateName, cityName, district, safeStateName, safeCityName });
+
+    let stateDoc = await State.findOne({ name: safeStateName });
 
     if (!stateDoc) {
-        // Create new state with city + optional district
+        // ✅ Create with validated fallback values
         stateDoc = await State.create({
-            name: stateName,
-            cities: [{ name: cityName, districts: district ? [district] : [] }],
+            name: safeStateName,
+            cities: [{ name: safeCityName, districts: district ? [district] : [] }],
         });
         return stateDoc;
     }
 
-    // Find city inside state
-    let cityDoc = stateDoc.cities.find((c) => c.name === cityName);
+    // ✅ Find or create city safely
+    const cityDoc = stateDoc.cities.find((c) => c.name === safeCityName);
 
     if (!cityDoc) {
-        stateDoc.cities.push({ name: cityName, districts: district ? [district] : [] });
-    } else {
-        if (district && !cityDoc.districts.includes(district)) {
-            cityDoc.districts.push(district);
-        }
+        stateDoc.cities.push({
+            name: safeCityName,
+            districts: district ? [district] : [],
+        });
+    } else if (district && !cityDoc.districts.includes(district)) {
+        cityDoc.districts.push(district);
     }
 
     await stateDoc.save();
