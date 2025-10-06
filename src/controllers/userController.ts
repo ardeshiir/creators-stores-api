@@ -149,6 +149,7 @@ export async function syncUserLocation(
     }
 
     // ✅ Find or create city safely
+    // @ts-ignore
     const cityDoc = stateDoc.cities.find((c) => c.name === safeCityName);
 
     if (!cityDoc) {

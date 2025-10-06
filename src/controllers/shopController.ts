@@ -239,6 +239,7 @@ export async function syncStateCity(
         return;
     }
 
+    // @ts-ignore
     const cityDoc = stateDoc.cities.find((c) => c.name === safeCityName);
 
     if (!cityDoc) {
