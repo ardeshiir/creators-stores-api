@@ -256,10 +256,6 @@ export async function syncStateCity(
 
 
 // controllers/shopController.ts
-
-import { Request, Response, NextFunction } from 'express';
-import { Shop } from '../models/Shop';
-
 export const searchShops = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { q } = req.query;
