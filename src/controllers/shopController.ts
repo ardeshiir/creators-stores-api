@@ -253,3 +253,34 @@ export async function syncStateCity(
 
     await stateDoc.save();
 }
+
+
+// controllers/shopController.ts
+
+import { Request, Response, NextFunction } from 'express';
+import { Shop } from '../models/Shop';
+
+export const searchShops = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { q } = req.query;
+
+        if (!q || typeof q !== 'string') {
+            return res.status(400).json({ message: 'Search query (q) is required' });
+        }
+
+        // Search by store name, code, specialist name, or city/state, etc.
+        const shops = await Shop.find({
+            $or: [
+                { storeName: { $regex: q, $options: 'i' } },
+                { storeCode: { $regex: q, $options: 'i' } },
+                { 'specialistName': { $regex: q, $options: 'i' } },
+                { 'address.city': { $regex: q, $options: 'i' } },
+                { 'address.state': { $regex: q, $options: 'i' } }
+            ]
+        }).sort({ createdAt: -1 });
+
+        res.json(shops);
+    } catch (error) {
+        next(error);
+    }
+};

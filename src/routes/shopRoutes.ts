@@ -6,7 +6,7 @@ import {
     getShopById,
     updateShop,
     deleteShop, getShopByShopId,
-    verifyShop, resendShopOtp, filterShops,
+    verifyShop, resendShopOtp, filterShops, searchShops,
 } from '../controllers/shopController';
 
 const router = Router();
@@ -15,6 +15,7 @@ const router = Router();
 router.post('/', authMiddleware, createShop);
 router.post("/:id/resend-otp", authMiddleware, resendShopOtp);
 
+router.get('/search', authMiddleware, searchShops);
 router.post("/verify", authMiddleware, verifyShop);
 router.get('/', authMiddleware, getShops);
 router.get('/filter', authMiddleware, filterShops);
