@@ -82,7 +82,7 @@ export const searchUsers = async (req: Request, res: Response, next: NextFunctio
         }
 
         // Case-insensitive search across both name and lastName
-        const users = await User.find({
+        const users = await User.find({isActive: true,
             $or: [
                 { name: { $regex: q, $options: "i" } },
                 { lastName: { $regex: q, $options: "i" } }
@@ -99,7 +99,7 @@ export const filterUsers = async (req: Request, res: Response, next: NextFunctio
     try {
         const { state, city, district, role } = req.query;
 
-        const filter: any = {};
+        const filter: any = {isActive: true};
 
         if (state) {
             const states = Array.isArray(state) ? state : String(state).split(',');
