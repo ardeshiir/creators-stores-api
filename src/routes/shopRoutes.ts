@@ -6,7 +6,7 @@ import {
     getShopById,
     updateShop,
     deleteShop, getShopByShopId,
-    verifyShop, resendShopOtp, filterShops, searchShops,
+    verifyShop, resendShopOtp, filterShops, searchShops, exportShops,
 } from '../controllers/shopController';
 
 const router = Router();
@@ -14,7 +14,7 @@ const router = Router();
 // Protected routes using authMiddleware
 router.post('/', authMiddleware, createShop);
 router.post("/:id/resend-otp", authMiddleware, resendShopOtp);
-
+router.get('/export', authMiddleware, exportShops)
 router.get('/search', authMiddleware, searchShops);
 router.post("/verify", authMiddleware, verifyShop);
 router.get('/', authMiddleware, getShops);

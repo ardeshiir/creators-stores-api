@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { Shop } from '../models/Shop';
-import { User } from "../models/User";
+import {IUser, User} from "../models/User";
 import { generateAndSendOtp } from "./authController";
 import { Otp } from "../models/Otp";
 import bcrypt from "bcrypt";
 import { AuthRequest } from "../middlewares/authMiddleware";
+import ExcelJS from 'exceljs'
 import { State } from "../models/State";
 import { getRoleBasedFilter } from "../middlewares/getRoleBasedFilter";
 
@@ -280,3 +281,65 @@ export const searchShops = async (req: Request, res: Response, next: NextFunctio
         next(error);
     }
 };
+
+
+export const exportShops = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const { state, city, sellerType, purchaseMethod, hasSignBoard, hasDisplayStand, hasShowCase } =
+            req.query
+
+        const filter: any = {}
+
+        if (state) filter['address.state'] = { $in: Array.isArray(state) ? state : [state] }
+        if (city) filter['address.city'] = { $in: Array.isArray(city) ? city : [city] }
+        if (sellerType) filter.sellerType = sellerType
+        if (purchaseMethod) filter.purchaseMethod = purchaseMethod
+        if (hasSignBoard !== undefined) filter.hasSignBoard = hasSignBoard === 'true'
+        if (hasDisplayStand !== undefined) filter.hasDisplayStand = hasDisplayStand === 'true'
+        if (hasShowCase !== undefined) filter.hasShowCase = hasShowCase === 'true'
+
+        const shops = await Shop.find(filter).sort({ createdAt: -1 }).populate('specialist', 'name lastName phone identifierCode role')
+
+        const workbook = new ExcelJS.Workbook()
+        const sheet = workbook.addWorksheet('Shops')
+
+        sheet.columns = [
+            { header: 'ID', key: '_id', width: 20 },
+            { header: 'نام فروشگاه', key: 'storeName', width: 30 },
+            { header: 'نام کارشناس', key: 'specialistName', width: 25 },
+            { header: 'شماره تماس کارشناس', key: 'specialistPhoneNumber', width: 20 },
+            { header: 'استان', key: 'state', width: 15 },
+            { header: 'شهر', key: 'city', width: 15 },
+            { header: 'منطقه', key: 'district', width: 10 },
+            { header: 'تاریخ ثبت', key: 'createdAt', width: 25 },
+        ]
+
+        shops.forEach((shop) => {
+            sheet.addRow({
+                _id: shop._id,
+                storeName: shop.storeName,
+                specialistName: (shop.specialist as  IUser)?.name,
+                specialistPhoneNumber: (shop.specialist as  IUser)?.phone,
+                state: shop.address?.state,
+                city: shop.address?.city,
+                district: shop.address?.district,
+                createdAt: shop.createdAt?.toLocaleString('fa-IR'),
+            })
+        })
+
+        // Stream the file
+        res.setHeader(
+            'Content-Disposition',
+            'attachment; filename="shops-export.xlsx"'
+        )
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        await workbook.xlsx.write(res)
+        res.end()
+    } catch (error) {
+        next(error)
+    }
+}

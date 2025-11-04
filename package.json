@@ -36,6 +36,7 @@
     "@aws-sdk/client-s3": "^3.855.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
+    "exceljs": "^4.4.0",
     "jsonwebtoken": "^9.0.2",
     "kavenegar": "^1.1.4",
     "mongoose": "^8.16.5",
