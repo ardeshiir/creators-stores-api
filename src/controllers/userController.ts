@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { User } from '../models/User';
 import {State} from "../models/State";
+import ExcelJS from "exceljs";
+import {AuthRequest} from "../middlewares/authMiddleware";
 
 // Create a user
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
@@ -165,4 +167,70 @@ export async function syncUserLocation(
 
     await stateDoc.save();
     return stateDoc;
+}
+
+export const exportUsers = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const { state, city, role, isActive } = req.query
+
+        const filter: any = {}
+        if (state) filter.state = { $in: Array.isArray(state) ? state : [state] }
+        if (city) filter.city = { $in: Array.isArray(city) ? city : [city] }
+        if (role) filter.role = role
+        if (isActive !== undefined) filter.isActive = isActive === 'true'
+
+        const users = await User.find(filter).sort({ createdAt: -1 })
+
+        const workbook = new ExcelJS.Workbook()
+        const sheet = workbook.addWorksheet('Users')
+
+        sheet.columns = [
+            { header: 'ID', key: '_id', width: 25 },
+            { header: 'نام', key: 'name', width: 20 },
+            { header: 'نام خانوادگی', key: 'lastName', width: 20 },
+            { header: 'کد شناسایی', key: 'identifierCode', width: 15 },
+            { header: 'شماره تماس', key: 'phone', width: 20 },
+            { header: 'نقش', key: 'role', width: 20 },
+            { header: 'استان', key: 'state', width: 20 },
+            { header: 'شهر', key: 'city', width: 20 },
+            { header: 'منطقه', key: 'district', width: 10 },
+            { header: 'وضعیت فعالیت', key: 'isActive', width: 15 },
+            { header: 'تاریخ ایجاد', key: 'createdAt', width: 25 },
+        ]
+
+        users.forEach((u) => {
+            sheet.addRow({
+                _id: (u._id as any).toString(),
+                name: u.name || '-',
+                lastName: u.lastName || '-',
+                identifierCode: u.identifierCode || '-',
+                phone: u.phone,
+                role:
+                    u.role === 'field_agent'
+                        ? 'کارشناس فروش'
+                        : u.role === 'regional_manager'
+                            ? 'مدیر منطقه'
+                            : 'مدیر کل',
+                state: u.state || '-',
+                city: u.city || '-',
+                district: u.district || '-',
+                isActive: u.isActive ? 'فعال' : 'غیرفعال',
+                createdAt: u.createdAt?.toLocaleString('fa-IR'),
+            })
+        })
+
+        res.setHeader(
+            'Content-Disposition',
+            'attachment; filename="users-export.xlsx"'
+        )
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+        await workbook.xlsx.write(res)
+        res.end()
+    } catch (err) {
+        next(err)
+    }
 }

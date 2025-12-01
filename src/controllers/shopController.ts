@@ -285,61 +285,157 @@ export const searchShops = async (req: Request, res: Response, next: NextFunctio
 
 export const exportShops = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const { state, city, sellerType, purchaseMethod, hasSignBoard, hasDisplayStand, hasShowCase } =
-            req.query
+        const {
+            state,
+            city,
+            sellerType,
+            purchaseMethod,
+            hasSignBoard,
+            hasDisplayStand,
+            hasShowCase,
+        } = req.query;
 
-        const filter: any = {}
+        const filter: any = {};
 
-        if (state) filter['address.state'] = { $in: Array.isArray(state) ? state : [state] }
-        if (city) filter['address.city'] = { $in: Array.isArray(city) ? city : [city] }
-        if (sellerType) filter.sellerType = sellerType
-        if (purchaseMethod) filter.purchaseMethod = purchaseMethod
-        if (hasSignBoard !== undefined) filter.hasSignBoard = hasSignBoard === 'true'
-        if (hasDisplayStand !== undefined) filter.hasDisplayStand = hasDisplayStand === 'true'
-        if (hasShowCase !== undefined) filter.hasShowCase = hasShowCase === 'true'
+        if (state) filter["address.state"] = { $in: Array.isArray(state) ? state : [state] };
+        if (city) filter["address.city"] = { $in: Array.isArray(city) ? city : [city] };
+        if (sellerType) filter["storeDescription.sellerType"] = sellerType;
+        if (purchaseMethod) filter["purchaseMethod"] = purchaseMethod;
+        if (hasSignBoard !== undefined) filter["signBoard.0"] = hasSignBoard === "true" ? { $exists: true } : { $exists: false };
+        if (hasDisplayStand !== undefined) filter["displayStand"] = hasDisplayStand === "true" ? { $exists: true } : { $exists: false };
+        if (hasShowCase !== undefined) filter["showCase.0"] = hasShowCase === "true" ? { $exists: true } : { $exists: false };
 
-        const shops = await Shop.find(filter).sort({ createdAt: -1 }).populate('specialist', 'name lastName phone identifierCode role')
+        const shops = await Shop.find(filter)
+            .sort({ createdAt: -1 })
+            .populate("specialist", "name lastName phone identifierCode role");
 
-        const workbook = new ExcelJS.Workbook()
-        const sheet = workbook.addWorksheet('Shops')
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Shops");
 
         sheet.columns = [
-            { header: 'ID', key: '_id', width: 20 },
-            { header: 'نام فروشگاه', key: 'storeName', width: 30 },
-            { header: 'نام کارشناس', key: 'specialistName', width: 25 },
-            { header: 'شماره تماس کارشناس', key: 'specialistPhoneNumber', width: 20 },
-            { header: 'استان', key: 'state', width: 15 },
-            { header: 'شهر', key: 'city', width: 15 },
-            { header: 'منطقه', key: 'district', width: 10 },
-            { header: 'تاریخ ثبت', key: 'createdAt', width: 25 },
-        ]
+            { header: "ID", key: "_id", width: 24 },
+            { header: "کد فروشگاه", key: "storeCode", width: 15 },
+            { header: "نام فروشگاه", key: "storeName", width: 25 },
+
+            // Specialist info
+            { header: "نام کارشناس", key: "specialistName", width: 20 },
+            { header: "نام خانوادگی کارشناس", key: "specialistLastName", width: 20 },
+            { header: "شماره تماس کارشناس", key: "specialistPhone", width: 20 },
+            { header: "کد شناسایی کارشناس", key: "specialistIdentifier", width: 20 },
+            { header: "نقش کارشناس", key: "specialistRole", width: 15 },
+
+            // Shop personal
+            { header: "نام صاحب فروشگاه", key: "ownerName", width: 20 },
+            { header: "نام‌خانوادگی صاحب فروشگاه", key: "ownerLastName", width: 20 },
+            { header: "موبایل‌ها", key: "mobile", width: 20 },
+
+            // Properties
+            { header: "نوع مالکیت", key: "propertyStatus", width: 15 },
+            { header: "روش خرید", key: "purchaseMethod", width: 15 },
+
+            // Store description
+            { header: "متراژ", key: "area", width: 10 },
+            { header: "سابقه فعالیت", key: "activityHistory", width: 15 },
+            { header: "سابقه همکاری", key: "cooperationHistory", width: 15 },
+            { header: "نوع فروشنده", key: "sellerType", width: 15 },
+
+            // Address
+            { header: "استان", key: "state", width: 15 },
+            { header: "شهر", key: "city", width: 15 },
+            { header: "منطقه", key: "district", width: 10 },
+            { header: "آدرس", key: "addressDesc", width: 40 },
+            { header: "کد پستی", key: "postalcode", width: 15 },
+            { header: "شماره تلفن ثابت", key: "landLine", width: 15 },
+            { header: "شماره تماس ثابت", key: "phoneNumber", width: 25 },
+            { header: "لوکیشن LAT", key: "lat", width: 15 },
+            { header: "لوکیشن LON", key: "lon", width: 15 },
+
+            // SignBoard
+            { header: "تابلو – عرض", key: "signWidth", width: 12 },
+            { header: "تابلو – ارتفاع", key: "signHeight", width: 12 },
+            { header: "نوع تابلو", key: "signType", width: 20 },
+
+            // Display Stand
+            { header: "استند – نوع", key: "displayType", width: 15 },
+            { header: "استند – برند", key: "displayBrand", width: 15 },
+
+            // ShowCase
+            { header: "ویترین – عرض", key: "showWidth", width: 12 },
+            { header: "ویترین – ارتفاع", key: "showHeight", width: 12 },
+            { header: "ویترین – استیکر", key: "showSticker", width: 10 },
+
+            // Other
+            { header: "برندهای دیگر", key: "otherBrands", width: 25 },
+            { header: "توضیحات", key: "description", width: 40 },
+            { header: "وضعیت تایید", key: "verified", width: 12 },
+            { header: "تاریخ ثبت", key: "createdAt", width: 25 },
+        ];
 
         shops.forEach((shop) => {
+            const sign = shop.signBoard?.[0];
+            const show = shop.showCase?.[0];
+            const ds = shop.displayStand;
+
             sheet.addRow({
-                _id: shop._id,
+                _id: (shop._id as any).toString(),
+                storeCode: shop.storeCode,
                 storeName: shop.storeName,
-                specialistName: (shop.specialist as  IUser)?.name,
-                specialistPhoneNumber: (shop.specialist as  IUser)?.phone,
+
+                specialistName: (shop.specialist as IUser)?.name,
+                specialistLastName: (shop.specialist as IUser)?.lastName,
+                specialistPhone: (shop.specialist as IUser)?.phone,
+                specialistIdentifier: (shop.specialist as IUser)?.identifierCode,
+                specialistRole: (shop.specialist as IUser)?.role,
+
+                ownerName: shop.name,
+                ownerLastName: shop.lastName,
+                mobile: shop.mobile?.join(", "),
+
+                propertyStatus: shop.propertyStatus,
+                purchaseMethod: shop.purchaseMethod,
+
+                area: shop.storeDescription?.area,
+                activityHistory: shop.storeDescription?.activityHistory,
+                cooperationHistory: shop.storeDescription?.cooperationHistory,
+                sellerType: shop.storeDescription?.sellerType,
+
                 state: shop.address?.state,
                 city: shop.address?.city,
                 district: shop.address?.district,
-                createdAt: shop.createdAt?.toLocaleString('fa-IR'),
-            })
-        })
+                addressDesc: shop.address?.description,
+                postalcode: shop.address?.postalcode,
+                phoneNumber: shop.address?.phoneNumber?.join(", "),
+                landLine: shop.address?.landLine,
+                lat: shop.address?.location?.lat,
+                lon: shop.address?.location?.lon,
 
-        // Stream the file
-        res.setHeader(
-            'Content-Disposition',
-            'attachment; filename="shops-export.xlsx"'
-        )
-        res.setHeader(
-            'Content-Type',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
+                signWidth: sign?.dimensions?.width,
+                signHeight: sign?.dimensions?.height,
+                signType: sign?.type,
 
-        await workbook.xlsx.write(res)
-        res.end()
+                displayType: ds?.type,
+                displayBrand: ds?.brand,
+
+                showWidth: show?.dimensions?.width,
+                showHeight: show?.dimensions?.height,
+                showSticker: show?.sticker ? "بله" : "خیر",
+
+                otherBrands: shop.otherBrands?.join(", "),
+                description: shop.description || "-",
+                verified: shop.verified ? "تایید شده" : "در انتظار",
+                createdAt: shop.createdAt?.toLocaleString("fa-IR"),
+            });
+        });
+
+        res.setHeader("Content-Disposition", 'attachment; filename="shops-export.xlsx"');
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        await workbook.xlsx.write(res);
+        res.end();
     } catch (error) {
-        next(error)
+        next(error);
     }
-}
+};

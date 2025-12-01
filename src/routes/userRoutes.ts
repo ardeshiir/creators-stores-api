@@ -4,7 +4,7 @@ import {
     getUsers,
     getUserById,
     updateUser,
-    deleteUser, searchUsers, filterUsers,
+    deleteUser, searchUsers, filterUsers, exportUsers,
 } from '../controllers/userController';
 
 const router = Router();
@@ -17,11 +17,14 @@ router.get("/search",  searchUsers);
 
 router.get('/filter', filterUsers);
 
+router.get('/export', exportUsers)
+
 router.get("/:id", getUserById);
 
 router.put("/:id", updateUser);
 
 router.delete("/:id", deleteUser);
+
 
 
 
