@@ -8,7 +8,7 @@ const connectDB = async () => {
         const DB_PORT = process.env.DB_PORT || '27017';
         const DB_NAME = process.env.DB_NAME || 'myapp';
 
-        const uri = `mongodb://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=admin`;
+        const uri = process.env.DATABASE_URL || '';
 
         await mongoose.connect(uri);
         console.log('✅ MongoDB connected');
